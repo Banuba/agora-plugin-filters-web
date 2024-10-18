@@ -1,121 +1,128 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Banuba SDK Web AR demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.16.1/AgoraRTC_N-production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@banuba/webar@1.16.0/dist/BanubaSDK.browser.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@banuba/agora-extension/dist/index.browser.js"></script>
+  </head>
 
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Banuba SDK Web AR demo</title>
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
-  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.16.1/AgoraRTC_N-production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@banuba/webar/dist/BanubaSDK.browser.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@banuba/agora-extension/dist/index.browser.js"></script>
-</head>
+  <body class="ui container">
+    <aside>
+      <div id="webar">
+        <button class="ui icon button" id="sound">
+          <i class="volume up icon"></i>
+        </button>
+      </div>
+      <div id="effect-controls">
+        <h2>Select an effect:</h2>
+        <button class="circular ui icon button" id="reset" title="Reset">
+          <i class="undo icon"></i>
+        </button>
+      </div>
+      <div id="effects"></div>
+    </aside>
 
-<body class="ui container">
-  <aside>     
-    <div id="webar">
-      <button class="ui icon button" id="sound">
-        <i class="volume up icon"></i>
-      </button>
-    </div>
-    <div id="effect-controls">
-      <h2>Select an effect:</h2>
-      <button class="circular ui icon button" id="reset" title="Reset">
-        <i class="undo icon"></i>
-      </button>
-    </div>
-    <div id="effects"></div>
-  </aside>
+    <main></main>
 
-  <main></main>
+    <script src="AgoraAppId.js"></script>
+    <script src="BanubaClientToken.js"></script>
+    <script type="module">
+      const effects = ["Glasses", "Hipster3", "MonsterFactory", "test_BG"];
 
-  <script src="AgoraAppId.js"></script>
-  <script src="BanubaClientToken.js"></script>
-  <script type="module">
-    const effects = [
-      "Glasses",
-      "Hipster3",
-      "MonsterFactory",
-      "test_BG",
-    ]
+      (async () => {
+        //#region Banuba extension set-up
+        const banuba = new BanubaAgoraExtension.Extension({
+          clientToken: window.BANUBA_CLIENT_TOKEN,
+          locateFile: "https://cdn.jsdelivr.net/npm/@banuba/webar@1.16.0/dist",
+        });
+        AgoraRTC.registerExtensions([banuba]);
 
-    ;(async () => {
-      //#region Banuba extension set-up
-      const banuba = new BanubaAgoraExtension.Extension({
-        clientToken: window.BANUBA_CLIENT_TOKEN,
-      })
-      AgoraRTC.registerExtensions([banuba])
+        const processor = banuba.createProcessor();
+        await processor.addModule(
+          ...["face_tracker", "background"].map(
+            (m) =>
+              "https://cdn.jsdelivr.net/npm/@banuba/agora-extension/dist/modules/" +
+              m +
+              ".zip"
+          )
+        );
+        //#endregion
 
-      const processor = banuba.createProcessor()
-      await processor.addModule(
-        ...["face_tracker", "background"].map((m) => "https://cdn.jsdelivr.net/npm/@banuba/agora-extension/dist/modules/" + m + ".zip"),
-      )
-      //#endregion
+        const audio = await AgoraRTC.createMicrophoneAudioTrack();
+        const video = await AgoraRTC.createCameraVideoTrack();
 
-      const audio = await AgoraRTC.createMicrophoneAudioTrack()
-      const video = await AgoraRTC.createCameraVideoTrack()
+        video.pipe(processor).pipe(video.processorDestination); // add Banuba extension processor to the camera video
+        video.play(document.querySelector("#webar"));
 
-      video.pipe(processor).pipe(video.processorDestination) // add Banuba extension processor to the camera video 
-      video.play(document.querySelector("#webar"))
+        //#region RTC session
+        const client = AgoraRTC.createClient({ mode: "rtc", codec: "h264" });
 
-      //#region RTC session
-      const client = AgoraRTC.createClient({ mode: "rtc", codec: "h264" })
+        client.on("user-published", async (user, mediaType) => {
+          await client.subscribe(user, mediaType);
+          if (mediaType === "video") user.videoTrack.play($("main")[0]);
+          if (mediaType === "audio") user.audioTrack.play();
+        });
 
-      client.on("user-published", async (user, mediaType) => {
-        await client.subscribe(user, mediaType);
-        if (mediaType === "video") user.videoTrack.play($("main")[0]);
-        if (mediaType === "audio") user.audioTrack.play();
-      })
+        await client.join(
+          window.AGORA_APP_ID,
+          window.AGORA_CHANNEL_NAME,
+          window.AGORA_TOKEN
+        );
 
-      await client.join(
-        window.AGORA_APP_ID,
-        window.AGORA_CHANNEL_NAME,
-        window.AGORA_TOKEN,
-      )
+        await client.publish([video, audio]);
+        //#endregion
 
-      await client.publish([ video, audio ])
-      //#endregion
-
-      //#region effects
-      $.each(effects, async (idx, effectName) => {
-        const btn = $(
-          `<button class="ui tertiary button elastic loading">
+        //#region effects
+        $.each(effects, async (idx, effectName) => {
+          const btn = $(
+            `<button class="ui tertiary button elastic loading">
             ${effectName}
           </button>`
-        )
-        .prependTo("#effects")
+          ).prependTo("#effects");
 
-        btn.on("click", () => processor.applyEffect(`effects/${effectName}.zip`))
-        btn.removeClass("loading")
-      })
-      $("#reset").on("click", () => processor.clearEffect())
-      //#endregion
+          btn.on("click", () =>
+            processor.applyEffect(`effects/${effectName}.zip`)
+          );
+          btn.removeClass("loading");
+        });
+        $("#reset").on("click", () => processor.clearEffect());
+        //#endregion
 
-      //#region participants view
-      const adjustParticipantsView = () => {
-        const usersCount = client.remoteUsers.length
-        const columnsCount = Math.ceil(Math.sqrt(usersCount))
-        $("main").css("grid-template-columns", `repeat(${columnsCount}, 1fr)`)
-      }
-      client.on("user-joined", adjustParticipantsView)
-      client.on("user-left", adjustParticipantsView)
-      //#endregion
+        //#region participants view
+        const adjustParticipantsView = () => {
+          const usersCount = client.remoteUsers.length;
+          const columnsCount = Math.ceil(Math.sqrt(usersCount));
+          $("main").css(
+            "grid-template-columns",
+            `repeat(${columnsCount}, 1fr)`
+          );
+        };
+        client.on("user-joined", adjustParticipantsView);
+        client.on("user-left", adjustParticipantsView);
+        //#endregion
 
-      //#region sound
-      let volume = 100
-      const toggleSound = () => {
-        volume = volume ? 0 : 100
-        audio.setVolume(volume)
-        $("#sound > i").toggleClass("up mute")
-      }
+        //#region sound
+        let volume = 100;
+        const toggleSound = () => {
+          volume = volume ? 0 : 100;
+          audio.setVolume(volume);
+          $("#sound > i").toggleClass("up mute");
+        };
 
-      $("#sound").on("click", toggleSound)
-      //#endregion
-    })()
-  </script>
-</body>
-
+        $("#sound").on("click", toggleSound);
+        //#endregion
+      })();
+    </script>
+  </body>
 </html>
