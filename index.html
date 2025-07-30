@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.6/dist/semantic.min.js"></script>
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.16.1/AgoraRTC_N-production.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@banuba/webar@1.16.0/dist/BanubaSDK.browser.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@banuba/webar@1.17.0/dist/BanubaSDK.browser.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@banuba/agora-extension/dist/index.browser.js"></script>
   </head>
 
@@ -44,7 +44,7 @@
         //#region Banuba extension set-up
         const banuba = new BanubaAgoraExtension.Extension({
           clientToken: window.BANUBA_CLIENT_TOKEN,
-          locateFile: "https://cdn.jsdelivr.net/npm/@banuba/webar@1.16.0/dist",
+          locateFile: "https://cdn.jsdelivr.net/npm/@banuba/webar@1.17.0/dist",
         });
         AgoraRTC.registerExtensions([banuba]);
 
@@ -52,7 +52,7 @@
         await processor.addModule(
           ...["face_tracker", "background"].map(
             (m) =>
-              "https://cdn.jsdelivr.net/npm/@banuba/agora-extension/dist/modules/" +
+              "https://cdn.jsdelivr.net/npm/@banuba/webar@1.17.0/dist/modules/" +
               m +
               ".zip"
           )
