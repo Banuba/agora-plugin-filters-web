@@ -1,4 +1,16 @@
-# Agora Banuba Extension example app
+This repository contains the code examples for 
+[Banuba SDK on the Web](https://github.com/Banuba/agora-plugin-filters-web) and 
+[Agora.io SDK](http://Agora.io) integration. Banuba’s 
+[AR conferencing SDK](https://www.banuba.com/ar-conferencing) adds various effects (backgrounds, beauty filters, AR masks, etc.), while Agora handles the core video calling functionality. 
+
+Together, these toolkits let you quickly implement video calls, as well as raise camera enablement rate and improve user experience.
+
+Banuba Face AR SDK doesn’t collect, store, or process any user data, making it secure by design and compliant with GDPR and other data protection regulations.
+
+Check out examples for other platforms:
+
+* [Android](https://github.com/Banuba/agora-plugin-filters-android)
+* [iOS](https://github.com/Banuba/agora-plugin-filters-ios)
   
 ## Requirements
 
